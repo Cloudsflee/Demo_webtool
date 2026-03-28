@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Serper Agent Demo</title>
+    <style>
+      :root {
+        --bg: #f3f7fb;
+        --panel: #ffffff;
+        --ink: #1c2738;
+        --muted: #60728f;
+        --line: #d9e2f1;
+        --brand: #0f5dcf;
+        --brand-soft: #e8f0ff;
+        --ok: #0d8b5a;
+        --err: #c62b2b;
+        --run: #bb7a00;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        color: var(--ink);
+        background: radial-gradient(1000px 560px at -8% -12%, #dce8ff, transparent 60%),
+          radial-gradient(900px 500px at 110% -12%, #d5f0f0, transparent 60%),
+          linear-gradient(180deg, #f8fbff, var(--bg));
+        font-family: "Noto Sans SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+      }
+      .page {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+      .hero {
+        margin-bottom: 14px;
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: 30px;
+        font-family: "Noto Serif SC", "Source Serif 4", "STSong", serif;
+        letter-spacing: 0.4px;
+      }
+      .hero p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid #e8edf7;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(20, 44, 86, 0.08);
+        padding: 18px;
+        margin-bottom: 14px;
+        animation: riseIn 0.45s ease both;
+      }
+      .section-title {
+        margin: 0 0 10px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      textarea,
+      input[type="number"] {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        font-size: 14px;
+        padding: 10px 12px;
+        outline: none;
+      }
+      textarea:focus,
+      input[type="number"]:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px var(--brand-soft);
+      }
+      textarea {
+        min-height: 124px;
+        resize: vertical;
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .control-item {
+        flex: 1;
+        min-width: 170px;
+      }
+      .control-action {
+        flex: 0 0 auto;
+      }
+      .hint {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #6f7f99;
+      }
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 18px;
+        color: #fff;
+        background: linear-gradient(140deg, #0f66ea, #0e4fab);
+        font-size: 14px;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+      .result-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 5px 11px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .status-idle {
+        color: #3f5578;
+        background: #edf2fb;
+      }
+      .status-running {
+        color: #814d00;
+        background: #fff1d9;
+      }
+      .status-ok {
+        color: #0a734b;
+        background: #dff6ec;
+      }
+      .status-error {
+        color: #a11f1f;
+        background: #fee8e8;
+      }
+      .run-info {
+        font-size: 12px;
+        color: #667995;
+      }
+      .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .overview-item {
+        border: 1px solid #e4ebf8;
+        border-radius: 10px;
+        padding: 10px;
+        background: #f8fbff;
+      }
+      .overview-item .k {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .overview-item .v {
+        font-size: 14px;
+        line-height: 1.45;
+        word-break: break-word;
+      }
+      .layout-grid {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 12px;
+      }
+      .highlight-list {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .highlight-list li {
+        margin-bottom: 8px;
+        line-height: 1.45;
+        color: #2f415e;
+      }
+      .timeline {
+        list-style: none;
+        padding: 0;
+        margin: 6px 0 0;
+        border-left: 2px solid #d7e2f5;
+      }
+      .timeline-item {
+        position: relative;
+        margin-left: 14px;
+        margin-bottom: 10px;
+        border: 1px solid #dfe8f8;
+        border-radius: 10px;
+        background: #fbfdff;
+        padding: 10px;
+        animation: riseIn 0.36s ease both;
+      }
+      .timeline-item::before {
+        content: "";
+        position: absolute;
+        left: -22px;
+        top: 12px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #9ab4e6;
+        border: 2px solid #f3f7fb;
+      }
+      .tool-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .tool-no {
+        min-width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--brand-soft);
+        color: var(--brand);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .tool-name {
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .tool-meta {
+        margin-left: auto;
+        font-size: 12px;
+        color: #58739f;
+      }
+      .tool-core {
+        margin-top: 7px;
+        line-height: 1.45;
+        color: #314664;
+        font-size: 13px;
+        word-break: break-word;
+      }
+      .tool-tail {
+        margin-top: 6px;
+        font-size: 12px;
+        color: #5f7597;
+      }
+      .empty-block {
+        border: 1px dashed #cad8f2;
+        border-radius: 10px;
+        padding: 12px;
+        background: #fcfdff;
+        color: #697e9f;
+        font-size: 13px;
+      }
+      .answer-box {
+        margin-top: 8px;
+        background: #f3faf6;
+        border: 1px solid #d6ecdf;
+        border-radius: 10px;
+        padding: 12px;
+        white-space: pre-wrap;
+        line-height: 1.55;
+      }
+      .img-summary {
+        margin: 6px 0 10px;
+        color: #5c7296;
+        font-size: 13px;
+      }
+      .img-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      }
+      .img-card {
+        border: 1px solid #dfe8f8;
+        border-radius: 10px;
+        background: #fbfdff;
+        overflow: hidden;
+      }
+      .img-thumb {
+        display: block;
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        background: #eef3fb;
+      }
+      .img-meta {
+        padding: 10px;
+        font-size: 12px;
+        color: #2f415e;
+        line-height: 1.5;
+      }
+      .img-meta a {
+        color: #0f5dcf;
+      }
+      details {
+        margin-top: 12px;
+      }
+      pre {
+        background: #0f1828;
+        color: #d7e6ff;
+        border-radius: 8px;
+        padding: 12px;
+        overflow-x: auto;
+        font-size: 12px;
+      }
+      @keyframes riseIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @media (max-width: 880px) {
+        .layout-grid,
+        .overview-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <h1>Serper Agent Demo</h1>
+        <p>信息阅读顺序：请求概览 → 核心要点 → 工具调用时间线 → 最终回答</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="section-title">输入配置</h2>
+        <label for="userInput">用户问题</label>
+        <textarea
+          id="userInput"
+          placeholder="例如：请搜索并总结今天 AI 行业重点动态，并附来源链接"
+        ></textarea>
+        <div class="controls">
+          <div class="control-item">
+            <label for="maxTurns">max_turns</label>
+            <input id="maxTurns" type="number" min="1" value="6" />
+          </div>
+          <div class="control-item">
+            <label><input id="debug" type="checkbox" checked /> debug</label>
+          </div>
+          <div class="control-action">
+            <button id="runBtn">运行 Agent</button>
+          </div>
+        </div>
+        <div class="hint">提示：debug 开启后，页面会展示模型选择和工具调试细节。</div>
+      </section>
+
+      <section class="panel">
+        <div class="result-head">
+          <span id="statusBadge" class="status-badge status-idle">待执行</span>
+          <span id="runInfo" class="run-info">尚未发起请求</span>
+        </div>
+
+        <div class="layout-grid">
+          <div>
+            <h2 class="section-title">请求概览</h2>
+            <div id="requestOverview" class="overview-grid"></div>
+          </div>
+          <div>
+            <h2 class="section-title">核心要点提炼</h2>
+            <ul id="answerHighlights" class="highlight-list"></ul>
+          </div>
+        </div>
+
+        <h2 class="section-title" style="margin-top: 16px">工具调用时间线</h2>
+        <ol id="toolTimeline" class="timeline"></ol>
+
+        <h2 class="section-title" style="margin-top: 16px">最终回答</h2>
+        <div id="answer" class="answer-box"></div>
+
+        <h2 class="section-title" style="margin-top: 16px">本次请求下载图片</h2>
+        <div id="imageSummary" class="img-summary"></div>
+        <div id="imageGallery" class="img-grid"></div>
+
+        <details>
+          <summary>查看原始调试信息</summary>
+          <h3>Meta</h3>
+          <pre id="meta"></pre>
+          <h3>Debug Logs</h3>
+          <pre id="debugLogs"></pre>
+        </details>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
